@@ -57,7 +57,7 @@ export function isOnline(): boolean {
 async function serverAvailable(): Promise<boolean> {
   if (!_isServerConfigured() || !isOnline()) return false;
   try {
-    const res = await axios.get(`${effectiveServerUrl()}/api/health`, { timeout: 3000 });
+    const res = await axios.get(`${effectiveServerUrl()}/health`, { timeout: 3000 });
     return res.data.status === 'ok';
   } catch {
     return false;

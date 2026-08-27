@@ -72,7 +72,7 @@ export function getServerUrl(): string | null {
 }
 
 export function isServerConfigured(): boolean {
-  return !!getServerUrl();
+  return !!getServerUrl() || !!import.meta.env.VITE_API_URL;
 }
 
 export type { Collection };
