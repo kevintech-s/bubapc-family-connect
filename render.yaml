@@ -1,4 +1,5 @@
 # Render Blueprint (render.yaml)
+# Latest sync marker: v3
 # Deploys BUBAPC Family Connect: a web service (API + frontend) and a managed PostgreSQL DB.
 #
 # HOW TO DEPLOY (Render free tier):
