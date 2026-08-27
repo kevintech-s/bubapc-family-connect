@@ -20,7 +20,6 @@ services:
     rootDir: server
     buildCommand: npm install && npm run build && npm --prefix ../client install && npm --prefix ../client run build
     startCommand: node dist/index.js
-    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
