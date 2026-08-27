@@ -11,6 +11,8 @@
 #   - Free web services spin down after 15 min of inactivity (wake on request, ~50s cold start).
 #   - Free PostgreSQL databases expire after 30 days. Plan to upgrade or migrate before then.
 
+name: bubapc-family-connect
+
 services:
   - type: web
     name: bubapc-family-connect
