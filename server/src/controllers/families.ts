@@ -1,0 +1,127 @@
+import { Response } from 'express';
+import { query } from '../config/database';
+import { AuthRequest } from '../middleware/auth';
+
+export async function getFamilies(req: AuthRequest, res: Response) {
+  try {
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
+    let sql = `SELECT f.*,
+       COUNT(m.id) as member_count,
+       lm.name as leader_male_name,
+       lf.name as leader_female_name
+       FROM families f
+       LEFT JOIN members m ON m.family_id = f.id AND m.is_active = true
+       LEFT JOIN users lm ON f.leader_male_id = lm.id
+       LEFT JOIN users lf ON f.leader_female_id = lf.id`;
+
+    if (role === 'family_leader') {
+      sql += ` WHERE f.leader_male_id = ${userId} OR f.leader_female_id = ${userId}`;
+    }
+
+    sql += ` GROUP BY f.id, lm.name, lf.name ORDER BY f.name ASC`;
+
+    const result = await query(sql);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Get families error:', error);
+    res.status(500).json({ error: 'Failed to fetch families' });
+  }
+}
+
+export async function getFamilyById(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const familyResult = await query(
+      `SELECT f.*, lm.name as leader_male_name, lf.name as leader_female_name
+       FROM families f
+       LEFT JOIN users lm ON f.leader_male_id = lm.id
+       LEFT JOIN users lf ON f.leader_female_id = lf.id
+       WHERE f.id = $1`,
+      [id]
+    );
+
+    if (familyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Family not found' });
+    }
+
+    const membersResult = await query(
+      `SELECT id, full_name, email, phone, profile_photo, gender, role_in_family, date_joined
+       FROM members WHERE family_id = $1 AND is_active = true ORDER BY full_name`,
+      [id]
+    );
+
+    res.json({ ...familyResult.rows[0], members: membersResult.rows });
+  } catch (error: any) {
+    console.error('Get family error:', error);
+    res.status(500).json({ error: 'Failed to fetch family' });
+  }
+}
+
+export async function createFamily(req: AuthRequest, res: Response) {
+  try {
+    const { name, description, contact_email, contact_phone, address } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ error: 'Family name is required' });
+    }
+
+    const result = await query(
+      `INSERT INTO families (name, description, contact_email, contact_phone, address)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [name, description || '', contact_email || '', contact_phone || '', address || '']
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Create family error:', error);
+    res.status(500).json({ error: 'Failed to create family' });
+  }
+}
+
+export async function updateFamily(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const { name, description, contact_email, contact_phone, address, leader_male_id, leader_female_id } = req.body;
+
+    const result = await query(
+      `UPDATE families SET
+        name = COALESCE($1, name),
+        description = COALESCE($2, description),
+        contact_email = COALESCE($3, contact_email),
+        contact_phone = COALESCE($4, contact_phone),
+        address = COALESCE($5, address),
+        leader_male_id = $6,
+        leader_female_id = $7,
+        updated_at = CURRENT_TIMESTAMP
+       WHERE id = $8 RETURNING *`,
+      [name, description, contact_email, contact_phone, address, leader_male_id || null, leader_female_id || null, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Family not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Update family error:', error);
+    res.status(500).json({ error: 'Failed to update family' });
+  }
+}
+
+export async function deleteFamily(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const result = await query('DELETE FROM families WHERE id = $1 RETURNING id', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Family not found' });
+    }
+
+    res.json({ message: 'Family deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete family error:', error);
+    res.status(500).json({ error: 'Failed to delete family' });
+  }
+}
