@@ -75,16 +75,16 @@ export async function getFamilyById(req: AuthRequest, res: Response) {
 
 export async function createFamily(req: AuthRequest, res: Response) {
   try {
-    const { name, description, contact_email, contact_phone, address } = req.body;
+    const { name, description, contact_email, contact_phone, address, leader_male_id, leader_female_id } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: 'Family name is required' });
     }
 
     const result = await query(
-      `INSERT INTO families (name, description, contact_email, contact_phone, address)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name, description || '', contact_email || '', contact_phone || '', address || '']
+      `INSERT INTO families (name, description, contact_email, contact_phone, address, leader_male_id, leader_female_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [name, description || '', contact_email || '', contact_phone || '', address || '', leader_male_id || null, leader_female_id || null]
     );
 
     res.status(201).json(result.rows[0]);

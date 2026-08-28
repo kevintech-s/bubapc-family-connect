@@ -1,17 +1,38 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { familyService } from '../../services/api';
+import { familyService, authService } from '../../services/api';
 import { Family } from '../../types';
 import toast from 'react-hot-toast';
 
+interface AdminUser {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+  is_active: boolean;
+}
+
 export default function AdminFamiliesPage() {
   const [families, setFamilies] = useState<Family[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', contact_email: '', contact_phone: '', address: '' });
+  const [form, setForm] = useState({ name: '', description: '', contact_email: '', contact_phone: '', address: '', leader_male_id: '', leader_female_id: '' });
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
-  useEffect(() => { loadFamilies(); }, []);
+  useEffect(() => { loadData(); }, []);
+
+  const loadData = async () => {
+    try {
+      const [famRes, userRes] = await Promise.all([familyService.getAll(), authService.getUsers()]);
+      setFamilies(famRes.data);
+      setUsers(userRes.data ?? []);
+    } catch (error) {
+      toast.error('Failed to load families');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadFamilies = async () => {
     try {
@@ -27,16 +48,25 @@ export default function AdminFamiliesPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name) { toast.error('Family name is required'); return; }
+    const payload = {
+      name: form.name,
+      description: form.description,
+      contact_email: form.contact_email,
+      contact_phone: form.contact_phone,
+      address: form.address,
+      leader_male_id: form.leader_male_id ? Number(form.leader_male_id) : null,
+      leader_female_id: form.leader_female_id ? Number(form.leader_female_id) : null,
+    };
     try {
       if (editingId) {
-        await familyService.update(editingId, form);
+        await familyService.update(editingId, payload);
         toast.success('Family updated');
       } else {
-        await familyService.create(form);
+        await familyService.create(payload);
         toast.success('Family created');
       }
       resetForm();
-      loadFamilies();
+      loadData();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Operation failed');
     }
@@ -44,7 +74,15 @@ export default function AdminFamiliesPage() {
 
   const handleEdit = (family: Family) => {
     setEditingId(family.id);
-    setForm({ name: family.name, description: family.description || '', contact_email: family.contact_email || '', contact_phone: family.contact_phone || '', address: family.address || '' });
+    setForm({
+      name: family.name,
+      description: family.description || '',
+      contact_email: family.contact_email || '',
+      contact_phone: family.contact_phone || '',
+      address: family.address || '',
+      leader_male_id: family.leader_male_id ? String(family.leader_male_id) : '',
+      leader_female_id: family.leader_female_id ? String(family.leader_female_id) : '',
+    });
     setShowForm(true);
   };
 
@@ -53,14 +91,14 @@ export default function AdminFamiliesPage() {
       await familyService.delete(id);
       toast.success('Family deleted');
       setDeleteConfirm(null);
-      loadFamilies();
+      loadData();
     } catch (err: any) {
       toast.error(err.response?.data?.error || 'Failed to delete');
     }
   };
 
   const resetForm = () => {
-    setForm({ name: '', description: '', contact_email: '', contact_phone: '', address: '' });
+    setForm({ name: '', description: '', contact_email: '', contact_phone: '', address: '', leader_male_id: '', leader_female_id: '' });
     setEditingId(null);
     setShowForm(false);
   };
@@ -102,6 +140,24 @@ export default function AdminFamiliesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Male Family Leader</label>
+                <select value={form.leader_male_id} onChange={(e) => setForm({ ...form, leader_male_id: e.target.value })} className="input-field">
+                  <option value="">-- No leader --</option>
+                  {users.filter((u) => u.is_active && u.role === 'family_leader').map((u) => (
+                    <option key={u.id} value={u.id}>{u.name}{u.name !== u.email ? ` (${u.email})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Female Family Leader</label>
+                <select value={form.leader_female_id} onChange={(e) => setForm({ ...form, leader_female_id: e.target.value })} className="input-field">
+                  <option value="">-- No leader --</option>
+                  {users.filter((u) => u.is_active && u.role === 'family_leader').map((u) => (
+                    <option key={u.id} value={u.id}>{u.name}{u.name !== u.email ? ` (${u.email})` : ''}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -117,6 +173,7 @@ export default function AdminFamiliesPage() {
           <thead>
             <tr className="border-b border-gray-200">
               <th className="text-left py-3 px-4 font-medium text-gray-500">Name</th>
+              <th className="text-left py-3 px-4 font-medium text-gray-500">Leaders</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500">Contact</th>
               <th className="text-left py-3 px-4 font-medium text-gray-500">Members</th>
               <th className="text-right py-3 px-4 font-medium text-gray-500">Actions</th>
@@ -130,6 +187,14 @@ export default function AdminFamiliesPage() {
                     <div className="w-8 h-8 rounded-lg bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs">{family.name.charAt(0)}</div>
                     <span className="font-medium text-gray-900">{family.name}</span>
                   </div>
+                </td>
+                <td className="py-3 px-4">
+                  {family.leader_male_name || family.leader_female_name ? (
+                    <div className="text-xs text-gray-600">
+                      {family.leader_male_name && <div>👨 {family.leader_male_name}</div>}
+                      {family.leader_female_name && <div>👩 {family.leader_female_name}</div>}
+                    </div>
+                  ) : <span className="text-gray-400">—</span>}
                 </td>
                 <td className="py-3 px-4 text-gray-500">{family.contact_email || family.contact_phone || '-'}</td>
                 <td className="py-3 px-4 text-gray-500">{family.member_count || 0}</td>
