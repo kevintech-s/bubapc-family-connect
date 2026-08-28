@@ -146,6 +146,27 @@ const migrations = [
   `CREATE INDEX IF NOT EXISTS idx_friday_cancellations_date ON friday_cancellations(cancellation_date)`,
   `CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(service_date)`,
   `CREATE INDEX IF NOT EXISTS idx_attendance_family ON attendance(family_id)`,
+
+  `ALTER TABLE worship_leaders ADD COLUMN IF NOT EXISTS family_id INTEGER REFERENCES families(id) ON DELETE SET NULL`,
+  `ALTER TABLE worship_leaders ADD COLUMN IF NOT EXISTS service_date DATE`,
+  `CREATE INDEX IF NOT EXISTS idx_worship_leaders_family ON worship_leaders(family_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_worship_leaders_service_date ON worship_leaders(service_date)`,
+
+  `CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    family_id INTEGER REFERENCES families(id) ON DELETE SET NULL,
+    title VARCHAR(500) NOT NULL,
+    file_url VARCHAR(1000) NOT NULL,
+    file_type VARCHAR(20) DEFAULT '',
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    audience VARCHAR(20) NOT NULL DEFAULT 'coordinator' CHECK (audience IN ('coordinator', 'pastor')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_reports_audience ON reports(audience)`,
+  `CREATE INDEX IF NOT EXISTS idx_reports_family ON reports(family_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_reports_author ON reports(author_id)`,
+
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_members_email_unique ON members(email)`,
 ];
 
 export async function runMigrations() {

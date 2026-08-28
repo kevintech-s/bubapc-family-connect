@@ -4,6 +4,8 @@ dist/
 *.log
 uploads/*
 !uploads/.gitkeep
+server/uploads/*
+!server/uploads/.gitkeep
 coverage/
 .DS_Store
 

@@ -241,6 +241,39 @@ export const prayerRequestService = {
 };
 export const worshipLeaderService = makeService<any>('worship_leaders');
 
+export const reportService = {
+  getAll: async (): Promise<{ data: any[] }> => {
+    if (await serverAvailable()) {
+      const serverUrl = effectiveServerUrl();
+      const res = await axios.get(`${serverUrl}/api/reports`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      });
+      return res;
+    }
+    return { data: [] };
+  },
+
+  upload: async (formData: FormData): Promise<{ data: any }> => {
+    if (await serverAvailable()) {
+      const serverUrl = effectiveServerUrl();
+      const res = await axios.post(`${serverUrl}/api/reports`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      });
+      return res;
+    }
+    throw new Error('Report upload requires server connection');
+  },
+
+  delete: async (id: number): Promise<void> => {
+    if (await serverAvailable()) {
+      const serverUrl = effectiveServerUrl();
+      await axios.delete(`${serverUrl}/api/reports/${id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      });
+    }
+  },
+};
+
 export const photoService = {
   getAll: async (category?: string): Promise<{ data: any[] }> => {
     let items = await getAll<any>('photos');

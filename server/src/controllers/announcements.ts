@@ -53,6 +53,9 @@ export async function getAnnouncements(req: AuthRequest, res: Response) {
 export async function getAnnouncementById(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
     const result = await query(
       `SELECT a.*, u.name as author_name, f.name as family_name
        FROM announcements a
@@ -66,6 +69,20 @@ export async function getAnnouncementById(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Announcement not found' });
     }
 
+    if (role === 'family_leader') {
+      const ann = result.rows[0];
+      if (ann.scope === 'family') {
+        const leaderFamilies = await query(
+          'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+          [userId]
+        );
+        const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+        if (!familyIds.includes(Number(ann.family_id))) {
+          return res.status(403).json({ error: 'Access denied' });
+        }
+      }
+    }
+
     res.json(result.rows[0]);
   } catch (error: any) {
     console.error('Get announcement error:', error);
@@ -75,10 +92,31 @@ export async function getAnnouncementById(req: AuthRequest, res: Response) {
 
 export async function createAnnouncement(req: AuthRequest, res: Response) {
   try {
-    const { title, content, is_important, image_url, scope, family_id } = req.body;
+    let { title, content, is_important, image_url, scope, family_id } = req.body;
+    const role = req.user?.role;
+    const userId = req.user?.id;
 
     if (!title || !content) {
       return res.status(400).json({ error: 'Title and content are required' });
+    }
+
+    if (role === 'family_leader') {
+      if (scope && scope !== 'family') {
+        return res.status(403).json({ error: 'Family leaders can only create family-scoped announcements' });
+      }
+      if (!family_id) {
+        return res.status(400).json({ error: 'Family is required for family-scoped announcements' });
+      }
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(family_id))) {
+        return res.status(403).json({ error: 'You can only create announcements for your own family' });
+      }
+      scope = 'family';
+      family_id = Number(family_id);
     }
 
     const result = await query(
@@ -98,6 +136,27 @@ export async function updateAnnouncement(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const { title, content, is_important, image_url } = req.body;
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
+    const existing = await query('SELECT scope, family_id FROM announcements WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Announcement not found' });
+    }
+
+    if (role === 'family_leader') {
+      if (existing.rows[0].scope !== 'family') {
+        return res.status(403).json({ error: 'You can only update your own family announcements' });
+      }
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(existing.rows[0].family_id))) {
+        return res.status(403).json({ error: 'You can only update your own family announcements' });
+      }
+    }
 
     const result = await query(
       `UPDATE announcements SET

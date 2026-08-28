@@ -14,6 +14,7 @@ import PrayerRequestsPage from './pages/PrayerRequestsPage';
 import WorshipPage from './pages/WorshipPage';
 import AttendancePage from './pages/AttendancePage';
 import GalleryPage from './pages/GalleryPage';
+import ReportsPage from './pages/ReportsPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -56,6 +57,7 @@ function App() {
         <Route path="/worship" element={<Layout><WorshipPage /></Layout>} />
         <Route path="/attendance" element={<Layout><AttendancePage /></Layout>} />
         <Route path="/gallery" element={<Layout><GalleryPage /></Layout>} />
+        <Route path="/reports" element={<Layout><ReportsPage /></Layout>} />
         <Route path="/profile" element={<Layout><ProfilePage /></Layout>} />
       </Route>
 

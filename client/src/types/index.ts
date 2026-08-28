@@ -84,8 +84,24 @@ export interface WorshipLeader {
   is_active: boolean;
   start_date: string;
   end_date: string | null;
+  family_id: number | null;
+  service_date: string | null;
+  family_name?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface Report {
+  id: number;
+  family_id: number | null;
+  title: string;
+  file_url: string;
+  file_type: string;
+  author_id: number | null;
+  audience: 'coordinator' | 'pastor';
+  family_name?: string;
+  author_name?: string;
+  created_at: string;
 }
 
 export interface Photo {

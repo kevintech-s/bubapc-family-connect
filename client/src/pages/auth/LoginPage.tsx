@@ -74,7 +74,7 @@ export default function LoginPage() {
 
           <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
             <p className="text-xs text-blue-700 text-center">
-              <strong>Demo admin:</strong> admin@bubapc.org / admin123
+              <strong>Demo admins (password admin123):</strong> pastor@bubapc.org · coordinator@bubapc.org · leader.male@bubapc.org
             </p>
           </div>
         </div>

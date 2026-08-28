@@ -71,10 +71,26 @@ export async function forwardPrayerRequest(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const userId = req.user?.id;
+    const role = req.user?.role;
 
     const pr = await query('SELECT * FROM prayer_requests WHERE id = $1', [id]);
     if (pr.rows.length === 0) {
       return res.status(404).json({ error: 'Prayer request not found' });
+    }
+
+    if (role === 'family_leader') {
+      const memberResult = await query('SELECT family_id FROM members WHERE id = $1', [pr.rows[0].member_id]);
+      if (memberResult.rows.length === 0) {
+        return res.status(403).json({ error: 'You can only forward prayer requests from your own family' });
+      }
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(memberResult.rows[0].family_id)) {
+        return res.status(403).json({ error: 'You can only forward prayer requests from your own family' });
+      }
     }
 
     const result = await query(

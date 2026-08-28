@@ -49,11 +49,28 @@ export async function getPhotos(req: AuthRequest, res: Response) {
 
 export async function createPhoto(req: AuthRequest, res: Response) {
   try {
-    const { caption, category, family_id } = req.body;
+    let { caption, category, family_id } = req.body;
     const file = req.file;
+    const role = req.user?.role;
+    const userId = req.user?.id;
 
     if (!file) {
       return res.status(400).json({ error: 'Photo file is required' });
+    }
+
+    if (role === 'family_leader') {
+      if (!family_id) {
+        return res.status(400).json({ error: 'Family is required for family leader uploads' });
+      }
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(family_id))) {
+        return res.status(403).json({ error: 'You can only upload photos to your own family gallery' });
+      }
+      family_id = Number(family_id);
     }
 
     const url = `/uploads/${file.filename}`;
@@ -74,10 +91,24 @@ export async function createPhoto(req: AuthRequest, res: Response) {
 export async function deletePhoto(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
-    const photoResult = await query('SELECT url FROM photos WHERE id = $1', [id]);
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
+    const photoResult = await query('SELECT url, family_id FROM photos WHERE id = $1', [id]);
 
     if (photoResult.rows.length === 0) {
       return res.status(404).json({ error: 'Photo not found' });
+    }
+
+    if (role === 'family_leader') {
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(photoResult.rows[0].family_id))) {
+        return res.status(403).json({ error: 'You can only delete photos from your own family gallery' });
+      }
     }
 
     const fs = require('fs');

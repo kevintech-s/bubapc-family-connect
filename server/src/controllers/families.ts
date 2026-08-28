@@ -33,6 +33,20 @@ export async function getFamilies(req: AuthRequest, res: Response) {
 export async function getFamilyById(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
+    if (role === 'family_leader') {
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(id))) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
     const familyResult = await query(
       `SELECT f.*, lm.name as leader_male_name, lf.name as leader_female_name
        FROM families f
@@ -84,19 +98,39 @@ export async function updateFamily(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const { name, description, contact_email, contact_phone, address, leader_male_id, leader_female_id } = req.body;
+    const role = req.user?.role;
+    const userId = req.user?.id;
+    const bodyHasLeader = (k: string) => Object.prototype.hasOwnProperty.call(req.body, k);
+
+    if (role === 'family_leader') {
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(id))) {
+        return res.status(403).json({ error: 'You can only update your own family' });
+      }
+    }
+
+    const hasMale = bodyHasLeader('leader_male_id');
+    const hasFemale = bodyHasLeader('leader_female_id');
+    const setClause = [
+      'name = COALESCE($1, name)',
+      'description = COALESCE($2, description)',
+      'contact_email = COALESCE($3, contact_email)',
+      'contact_phone = COALESCE($4, contact_phone)',
+      'address = COALESCE($5, address)',
+    ];
+    const params: any[] = [name, description, contact_email, contact_phone, address];
+    if (hasMale) { params.push(leader_male_id); setClause.push(`leader_male_id = $${params.length}`); }
+    if (hasFemale) { params.push(leader_female_id); setClause.push(`leader_female_id = $${params.length}`); }
+    params.push(id);
 
     const result = await query(
-      `UPDATE families SET
-        name = COALESCE($1, name),
-        description = COALESCE($2, description),
-        contact_email = COALESCE($3, contact_email),
-        contact_phone = COALESCE($4, contact_phone),
-        address = COALESCE($5, address),
-        leader_male_id = $6,
-        leader_female_id = $7,
-        updated_at = CURRENT_TIMESTAMP
-       WHERE id = $8 RETURNING *`,
-      [name, description, contact_email, contact_phone, address, leader_male_id || null, leader_female_id || null, id]
+      `UPDATE families SET ${setClause.join(', ')}
+       WHERE id = $${params.length} RETURNING *`,
+      params
     );
 
     if (result.rows.length === 0) {

@@ -84,9 +84,22 @@ export async function getMemberById(req: AuthRequest, res: Response) {
 export async function createMember(req: AuthRequest, res: Response) {
   try {
     const { full_name, email, phone, family_id, role_in_family, date_joined, gender, birthday } = req.body;
+    const role = req.user?.role;
+    const userId = req.user?.id;
 
     if (!full_name || !email || !family_id) {
       return res.status(400).json({ error: 'Full name, email, and family are required' });
+    }
+
+    if (role === 'family_leader') {
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      if (!familyIds.includes(Number(family_id))) {
+        return res.status(403).json({ error: 'You can only add members to your own family' });
+      }
     }
 
     const existingMember = await query(
@@ -95,6 +108,14 @@ export async function createMember(req: AuthRequest, res: Response) {
     );
     if (existingMember.rows.length > 0) {
       return res.status(409).json({ error: 'This member already belongs to this family' });
+    }
+
+    const existingAnyFamily = await query(
+      'SELECT id, family_id FROM members WHERE email = $1',
+      [email]
+    );
+    if (existingAnyFamily.rows.length > 0) {
+      return res.status(400).json({ error: 'A member with this email already belongs to a family' });
     }
 
     const result = await query(
@@ -114,6 +135,42 @@ export async function updateMember(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const { full_name, email, phone, family_id, role_in_family, is_active, profile_photo, gender, birthday } = req.body;
+    const role = req.user?.role;
+    const userId = req.user?.id;
+
+    if (role === 'family_leader') {
+      const target = await query('SELECT family_id FROM members WHERE id = $1', [id]);
+      if (target.rows.length === 0) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      const leaderFamilies = await query(
+        'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1',
+        [userId]
+      );
+      const familyIds = leaderFamilies.rows.map((r: any) => r.id);
+      const targetFamilyId = family_id || target.rows[0].family_id;
+      if (!familyIds.includes(Number(targetFamilyId))) {
+        return res.status(403).json({ error: 'You can only update members in your own family' });
+      }
+    }
+
+    if (family_id && email) {
+      const conflict = await query(
+        'SELECT id FROM members WHERE email = $1 AND family_id = $2 AND id <> $3',
+        [email, family_id, id]
+      );
+      if (conflict.rows.length > 0) {
+        return res.status(400).json({ error: 'A member with this email already belongs to a family' });
+      }
+    } else if (email) {
+      const conflict = await query(
+        'SELECT id FROM members WHERE LOWER(email) = LOWER($1) AND id <> $2',
+        [email, id]
+      );
+      if (conflict.rows.length > 0) {
+        return res.status(400).json({ error: 'A member with this email already belongs to a family' });
+      }
+    }
 
     const result = await query(
       `UPDATE members SET
