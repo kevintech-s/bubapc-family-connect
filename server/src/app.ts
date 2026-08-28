@@ -21,8 +21,22 @@ import fs from 'fs';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.RENDER_EXTERNAL_URL,
+  'https://bubapc-family-connect.onrender.com',
+  'https://localhost',
+  'http://localhost',
+  'capacitor://localhost',
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? process.env.CLIENT_URL : '*',
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(null, false);
+  },
   credentials: process.env.NODE_ENV === 'production',
 }));
 app.use(express.json({ limit: '10mb' }));
