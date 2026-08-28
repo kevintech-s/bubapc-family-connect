@@ -66,12 +66,15 @@ async function serverAvailable(): Promise<boolean> {
 
 export const authService = {
   login: async (email: string, password: string) => {
-    if (await serverAvailable()) {
+    const url = effectiveServerUrl();
+    if (url && url.startsWith('http') && isOnline()) {
       try {
-        const res = await api.post('/auth/login', { email, password });
+        const res = await axios.post(`${url}/auth/login`, { email, password }, { timeout: 20000 });
         await saveAuthData(res.data.token, res.data.user);
         return res;
-      } catch (e: any) { throw e; }
+      } catch (e: any) {
+        if (e.response?.status) throw e;
+      }
     }
     const auth = await getAuthData();
     if (auth?.user?.email === email) {

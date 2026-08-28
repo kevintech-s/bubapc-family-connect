@@ -71,12 +71,6 @@ export default function LoginPage() {
               Register
             </Link>
           </p>
-
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-            <p className="text-xs text-blue-700 text-center">
-              <strong>Demo admins (password admin123):</strong> pastor@bubapc.org · coordinator@bubapc.org · leader.male@bubapc.org
-            </p>
-          </div>
         </div>
       </div>
     </div>
