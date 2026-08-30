@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { query } from '../config/database';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -43,7 +44,7 @@ const ROLE_HIERARCHY: Record<string, number> = {
 };
 
 export function authorize(...roles: string[]) {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -52,12 +53,29 @@ export function authorize(...roles: string[]) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
+    if (req.user.role === 'family_leader') {
+      try {
+        const check = await query(
+          'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1 LIMIT 1',
+          [req.user.id]
+        );
+        if (check.rows.length === 0) {
+          return res.status(403).json({
+            error: 'You are not assigned to any family yet. Ask the pastor to assign you as the male (Paapa) or female (Maama) leader of your family.',
+          });
+        }
+      } catch (error) {
+        console.error('leader family check error:', error);
+        return res.status(500).json({ error: 'Failed to verify family assignment' });
+      }
+    }
+
     next();
   };
 }
 
 export function authorizeMinRole(minRole: string) {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -67,6 +85,23 @@ export function authorizeMinRole(minRole: string) {
 
     if (userLevel < requiredLevel) {
       return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
+    if (req.user.role === 'family_leader') {
+      try {
+        const check = await query(
+          'SELECT id FROM families WHERE leader_male_id = $1 OR leader_female_id = $1 LIMIT 1',
+          [req.user.id]
+        );
+        if (check.rows.length === 0) {
+          return res.status(403).json({
+            error: 'You are not assigned to any family yet. Ask the pastor to assign you as the male (Paapa) or female (Maama) leader of your family.',
+          });
+        }
+      } catch (error) {
+        console.error('leader family check error:', error);
+        return res.status(500).json({ error: 'Failed to verify family assignment' });
+      }
     }
 
     next();
