@@ -10,7 +10,9 @@ export async function getFamilies(req: AuthRequest, res: Response) {
     let sql = `SELECT f.*,
        COUNT(m.id) as member_count,
        lm.name as leader_male_name,
-       lf.name as leader_female_name
+       lm.profile_photo as leader_male_photo,
+       lf.name as leader_female_name,
+       lf.profile_photo as leader_female_photo
        FROM families f
        LEFT JOIN members m ON m.family_id = f.id AND m.is_active = true
        LEFT JOIN users lm ON f.leader_male_id = lm.id
@@ -20,7 +22,7 @@ export async function getFamilies(req: AuthRequest, res: Response) {
       sql += ` WHERE f.leader_male_id = ${userId} OR f.leader_female_id = ${userId}`;
     }
 
-    sql += ` GROUP BY f.id, lm.name, lf.name ORDER BY f.name ASC`;
+    sql += ` GROUP BY f.id, lm.name, lm.profile_photo, lf.name, lf.profile_photo ORDER BY f.name ASC`;
 
     const result = await query(sql);
     res.json(result.rows);
@@ -48,7 +50,7 @@ export async function getFamilyById(req: AuthRequest, res: Response) {
     }
 
     const familyResult = await query(
-      `SELECT f.*, lm.name as leader_male_name, lf.name as leader_female_name
+      `SELECT f.*, lm.name as leader_male_name, lm.profile_photo as leader_male_photo, lf.name as leader_female_name, lf.profile_photo as leader_female_photo
        FROM families f
        LEFT JOIN users lm ON f.leader_male_id = lm.id
        LEFT JOIN users lf ON f.leader_female_id = lf.id

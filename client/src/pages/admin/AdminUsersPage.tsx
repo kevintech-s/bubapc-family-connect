@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { authService } from '../../services/api';
+import { authService, resolveUploadUrl } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface UserRecord {
@@ -9,6 +9,7 @@ interface UserRecord {
   name: string;
   role: string;
   is_active: boolean;
+  profile_photo?: string;
   created_at: string;
 }
 
@@ -96,7 +97,11 @@ export default function AdminUsersPage() {
               <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="py-3 px-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs">{user.name.charAt(0)}</div>
+                    {user.profile_photo ? (
+                      <img src={resolveUploadUrl(user.profile_photo)} alt={user.name} className="w-8 h-8 rounded-full object-cover bg-primary-100" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-xs">{user.name.charAt(0)}</div>
+                    )}
                     <span className="font-medium text-gray-900">{user.name}</span>
                   </div>
                 </td>

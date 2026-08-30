@@ -12,6 +12,7 @@ const migrations = [
     name VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'family_leader', 'family_coordinator', 'pastor')),
     is_active BOOLEAN DEFAULT true,
+    profile_photo VARCHAR(500) DEFAULT '',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`,
@@ -132,6 +133,7 @@ const migrations = [
   `ALTER TABLE attendance ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'present' CHECK (status IN ('present', 'late'))`,
   `ALTER TABLE attendance ADD COLUMN IF NOT EXISTS family_id INTEGER REFERENCES families(id) ON DELETE CASCADE`,
   `ALTER TABLE photos ADD COLUMN IF NOT EXISTS family_id INTEGER REFERENCES families(id) ON DELETE SET NULL`,
+  `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo VARCHAR(500) DEFAULT ''`,
 
   `CREATE INDEX IF NOT EXISTS idx_members_gender ON members(gender)`,
   `CREATE INDEX IF NOT EXISTS idx_members_birthday ON members(birthday)`,

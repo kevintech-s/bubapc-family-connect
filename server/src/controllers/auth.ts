@@ -29,14 +29,14 @@ export async function register(req: Request, res: Response) {
 
     const passwordHash = await bcrypt.hash(password, 12);
     const result = await query(
-      'INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role',
+      'INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, profile_photo',
       [email, passwordHash, name, 'member']
     );
 
     const user = result.rows[0];
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, jwtSecret(), { expiresIn: JWT_EXPIRES_IN as any });
 
-    res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role }, token });
+    res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role, profile_photo: user.profile_photo || '' }, token });
   } catch (error: any) {
     console.error('Registration error:', error);
     res.status(500).json({ error: 'Failed to register user' });
@@ -74,7 +74,7 @@ export async function login(req: Request, res: Response) {
     );
 
     res.json({
-      user: { id: user.id, email: user.email, name: user.name, role: user.role },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, profile_photo: user.profile_photo || '' },
       token,
     });
   } catch (error: any) {
@@ -90,7 +90,7 @@ export async function getMe(req: AuthRequest, res: Response) {
     }
 
     const result = await query(
-      'SELECT id, email, name, role, is_active, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, role, is_active, profile_photo, created_at FROM users WHERE id = $1',
       [req.user.id]
     );
 
@@ -108,7 +108,7 @@ export async function getMe(req: AuthRequest, res: Response) {
 export async function getUsers(_req: AuthRequest, res: Response) {
   try {
     const result = await query(
-      'SELECT id, email, name, role, is_active, created_at FROM users ORDER BY created_at DESC'
+      'SELECT id, email, name, role, is_active, profile_photo, created_at FROM users ORDER BY created_at DESC'
     );
     res.json(result.rows);
   } catch (error: any) {
@@ -131,7 +131,7 @@ export async function updateUserRole(req: AuthRequest, res: Response) {
     }
 
     const result = await query(
-      'UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role, is_active, created_at',
+      'UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role, is_active, profile_photo, created_at',
       [role, id]
     );
 
@@ -160,7 +160,7 @@ export async function updateUserStatus(req: AuthRequest, res: Response) {
     }
 
     const result = await query(
-      'UPDATE users SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role, is_active, created_at',
+      'UPDATE users SET is_active = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role, is_active, profile_photo, created_at',
       [is_active, id]
     );
 
@@ -181,7 +181,7 @@ export async function updateProfile(req: AuthRequest, res: Response) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { name, email } = req.body;
+    const { name, email, profile_photo } = req.body;
     const updates: string[] = [];
     const values: any[] = [];
     let paramIndex = 1;
@@ -194,6 +194,10 @@ export async function updateProfile(req: AuthRequest, res: Response) {
       updates.push(`email = $${paramIndex++}`);
       values.push(email);
     }
+    if (profile_photo !== undefined) {
+      updates.push(`profile_photo = $${paramIndex++}`);
+      values.push(profile_photo);
+    }
 
     if (updates.length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
@@ -203,7 +207,7 @@ export async function updateProfile(req: AuthRequest, res: Response) {
     values.push(req.user.id);
 
     const result = await query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, email, name, role, is_active, created_at, updated_at`,
+      `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramIndex} RETURNING id, email, name, role, is_active, profile_photo, created_at, updated_at`,
       values
     );
 
@@ -214,5 +218,29 @@ export async function updateProfile(req: AuthRequest, res: Response) {
     }
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
+  }
+}
+
+export async function uploadProfilePhoto(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (!file) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    const url = `/uploads/${file.filename}`;
+    const result = await query(
+      `UPDATE users SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id, email, name, role, is_active, profile_photo, created_at, updated_at`,
+      [url, req.user.id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Upload profile photo error:', error);
+    res.status(500).json({ error: 'Failed to upload profile photo' });
   }
 }

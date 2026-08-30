@@ -4,6 +4,7 @@ export interface User {
   name: string;
   role: 'member' | 'family_leader' | 'family_coordinator' | 'pastor';
   is_active: boolean;
+  profile_photo?: string;
   created_at: string;
 }
 
@@ -19,6 +20,8 @@ export interface Family {
   leader_female_id: number | null;
   leader_male_name?: string;
   leader_female_name?: string;
+  leader_male_photo?: string;
+  leader_female_photo?: string;
   member_count?: number;
   members?: Member[];
   created_at: string;

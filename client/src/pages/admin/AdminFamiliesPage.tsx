@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { familyService, authService } from '../../services/api';
+import { familyService, authService, resolveUploadUrl } from '../../services/api';
 import { Family } from '../../types';
 import toast from 'react-hot-toast';
 
@@ -190,9 +190,23 @@ export default function AdminFamiliesPage() {
                 </td>
                 <td className="py-3 px-4">
                   {family.leader_male_name || family.leader_female_name ? (
-                    <div className="text-xs text-gray-600">
-                      {family.leader_male_name && <div>👨 {family.leader_male_name}</div>}
-                      {family.leader_female_name && <div>👩 {family.leader_female_name}</div>}
+                    <div className="text-xs text-gray-600 space-y-1">
+                      {family.leader_male_name && (
+                        <div className="flex items-center gap-1.5">
+                          {family.leader_male_photo ? (
+                            <img src={resolveUploadUrl(family.leader_male_photo)} alt="Male leader" className="w-5 h-5 rounded-full object-cover bg-gray-100" />
+                          ) : <span>👨</span>}
+                          <span>{family.leader_male_name}</span>
+                        </div>
+                      )}
+                      {family.leader_female_name && (
+                        <div className="flex items-center gap-1.5">
+                          {family.leader_female_photo ? (
+                            <img src={resolveUploadUrl(family.leader_female_photo)} alt="Female leader" className="w-5 h-5 rounded-full object-cover bg-gray-100" />
+                          ) : <span>👩</span>}
+                          <span>{family.leader_female_name}</span>
+                        </div>
+                      )}
                     </div>
                   ) : <span className="text-gray-400">—</span>}
                 </td>

@@ -37,7 +37,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 md:p-8 text-white">
         <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name?.split(' ')[0]}</h1>
-        <p className="text-primary-100 mt-1">Family meetings: Fridays 5:00 PM - 6:00 PM</p>
+        <p className="text-primary-100 mt-1">Family meetings: Fridays 5:30 PM - 6:30 PM</p>
       </div>
 
       {data?.upcomingCancellation && (

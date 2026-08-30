@@ -59,6 +59,15 @@ export function isUsableServerUrl(url: string): boolean {
   return url.startsWith('http') || url.startsWith('/');
 }
 
+export function resolveUploadUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  if (!url.startsWith('/uploads/')) return url;
+  const base = effectiveServerUrl();
+  const origin = base.startsWith('http') ? base.replace(/\/api$/, '').replace(/\/+$/, '') : '';
+  return origin ? `${origin}${url}` : url;
+}
+
 async function serverAvailable(): Promise<boolean> {
   if (!_isServerConfigured() || !isOnline()) return false;
   try {
@@ -122,6 +131,16 @@ export const authService = {
     const updated = { ...user, ...data };
     localStorage.setItem('bubapc_offline_user', JSON.stringify(updated));
     return { data: updated };
+  },
+
+  updatePhoto: async (file: File) => {
+    if (!(await serverAvailable())) throw new Error('Photo upload requires server connection');
+    const form = new FormData();
+    form.append('photo', file);
+    const res = await api.post('/auth/photo', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res;
   },
 
   getUsers: () => api.get('/auth/users'),
