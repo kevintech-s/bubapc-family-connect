@@ -54,6 +54,11 @@ export function isOnline(): boolean {
   return navigator.onLine;
 }
 
+export function isUsableServerUrl(url: string): boolean {
+  if (!url) return false;
+  return url.startsWith('http') || url.startsWith('/');
+}
+
 async function serverAvailable(): Promise<boolean> {
   if (!_isServerConfigured() || !isOnline()) return false;
   try {
@@ -67,7 +72,7 @@ async function serverAvailable(): Promise<boolean> {
 export const authService = {
   login: async (email: string, password: string) => {
     const url = effectiveServerUrl();
-    if (url && url.startsWith('http') && isOnline()) {
+    if (isUsableServerUrl(url) && isOnline()) {
       try {
         const res = await axios.post(`${url}/auth/login`, { email, password }, { timeout: 20000 });
         await saveAuthData(res.data.token, res.data.user);
