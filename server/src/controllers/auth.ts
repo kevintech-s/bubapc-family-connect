@@ -18,6 +18,10 @@ export async function register(req: Request, res: Response) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
     }
 
+    if (!family_id) {
+      return res.status(400).json({ error: 'Please select a family' });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
@@ -35,18 +39,16 @@ export async function register(req: Request, res: Response) {
 
     const user = result.rows[0];
 
-    if (family_id !== undefined && family_id !== null && family_id !== '') {
-      const fam = await query('SELECT id FROM families WHERE id = $1', [family_id]);
-      if (fam.rows.length === 0) {
-        return res.status(400).json({ error: 'Selected family does not exist' });
-      }
+    const fam = await query('SELECT id FROM families WHERE id = $1', [family_id]);
+    if (fam.rows.length === 0) {
+      return res.status(400).json({ error: 'Selected family does not exist' });
     }
 
     await query(
       `INSERT INTO members (user_id, full_name, email, family_id)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (email) DO UPDATE SET user_id = EXCLUDED.user_id, family_id = CASE WHEN $4 IS NULL THEN members.family_id ELSE EXCLUDED.family_id END`,
-      [user.id, name, email, family_id || null]
+       ON CONFLICT (email) DO UPDATE SET user_id = EXCLUDED.user_id, family_id = EXCLUDED.family_id`,
+      [user.id, name, email, family_id]
     );
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, jwtSecret(), { expiresIn: JWT_EXPIRES_IN as any });

@@ -41,6 +41,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!familyId) {
+      toast.error('Please select your family');
+      return;
+    }
+
     setLoading(true);
     try {
       await register(email, password, name, familyId || undefined);
@@ -115,18 +120,19 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Join a Family</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Join a Family <span className="text-red-500">*</span></label>
               <select
                 value={familyId}
                 onChange={(e) => setFamilyId(e.target.value)}
                 className="input-field"
+                required
               >
-                <option value="">Select your family (optional)</option>
+                <option value="">Select your family...</option>
                 {families.map((f) => (
                   <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-gray-400">Choose from the families available. New families added by your pastor will appear here.</p>
+              <p className="mt-1 text-xs text-gray-400">Every member belongs to a family. New families added by your pastor will appear here.</p>
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full">
