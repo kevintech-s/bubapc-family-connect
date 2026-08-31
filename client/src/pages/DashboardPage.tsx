@@ -36,7 +36,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 md:p-8 text-white">
-        <h1 className="text-2xl md:text-3xl font-bold">Welcome back, {user?.name?.split(' ')[0]}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Welcome</h1>
         <p className="text-primary-100 mt-1">Family meetings: Fridays 5:30 PM - 6:30 PM</p>
       </div>
 
@@ -68,10 +68,6 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">Present Today</p>
             <p className="text-2xl font-bold text-primary-700 mt-1">{data.todayAttendance?.present_count ?? 0}</p>
           </Link>
-          <div className="card">
-            <p className="text-sm text-gray-500">Prayer Requests</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{data?.recentPrayerRequests?.length || 0}</p>
-          </div>
         </div>
       )}
 
@@ -122,7 +118,7 @@ export default function DashboardPage() {
 
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Worship Leaders</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Programme Leaders</h2>
             <Link to="/worship" className="text-sm text-primary-600 hover:text-primary-700">View all</Link>
           </div>
           {data?.activeWorshipLeaders?.length ? (
@@ -138,33 +134,7 @@ export default function DashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-4">No worship leaders assigned</p>
-          )}
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Prayer Requests</h2>
-            <Link to="/prayer-requests" className="text-sm text-primary-600 hover:text-primary-700">View all</Link>
-          </div>
-          {data?.recentPrayerRequests?.length ? (
-            <div className="space-y-3">
-              {data.recentPrayerRequests.slice(0, 3).map((pr) => (
-                <div key={pr.id} className="p-3 rounded-lg border border-gray-100">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-900">{pr.title}</h3>
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      pr.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                      pr.status === 'addressed' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>{pr.status}</span>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{pr.category}{pr.member_name ? ` • ${pr.member_name}` : ''}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-4">No prayer requests</p>
+            <p className="text-sm text-gray-500 text-center py-4">No programme leaders assigned</p>
           )}
         </div>
 

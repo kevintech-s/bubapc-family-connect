@@ -14,7 +14,7 @@ export default function WorshipPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', role: 'Worship Leader', is_active: true });
+  const [form, setForm] = useState({ name: '', role: 'Programme Leader', is_active: true });
 
   useEffect(() => {
     loadData();
@@ -71,10 +71,10 @@ export default function WorshipPage() {
     try {
       if (editingId) {
         await worshipLeaderService.update(editingId, payload);
-        toast.success('Worship leader updated');
+        toast.success('Programme leader updated');
       } else {
         await worshipLeaderService.create(payload);
-        toast.success('Worship leader added');
+        toast.success('Programme leader added');
       }
       resetForm();
       loadData();
@@ -90,7 +90,7 @@ export default function WorshipPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: '', role: 'Worship Leader', is_active: true });
+    setForm({ name: '', role: 'Programme Leader', is_active: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -102,8 +102,8 @@ export default function WorshipPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Worship Leaders</h1>
-        <p className="text-gray-500 mt-1">{isFamilyLeader ? 'Manage your family\'s worship team for a service date' : 'Our current worship team'}</p>
+        <h1 className="text-2xl font-bold text-gray-900">Programme Leaders</h1>
+        <p className="text-gray-500 mt-1">{isFamilyLeader ? 'Manage your family\'s programme team for a service date' : 'Our current programme team'}</p>
       </div>
 
       {isFamilyLeader && (
@@ -165,8 +165,8 @@ export default function WorshipPage() {
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
           </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No worship leaders</h3>
-          <p className="mt-1 text-sm text-gray-500">Worship leaders have not been assigned yet.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No programme leaders</h3>
+          <p className="mt-1 text-sm text-gray-500">Programme leaders have not been assigned yet.</p>
         </div>
       ) : (
         <div className="card overflow-x-auto">

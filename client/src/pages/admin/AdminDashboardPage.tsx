@@ -53,9 +53,9 @@ export default function AdminDashboardPage() {
           <p className="text-3xl font-bold text-primary-600 mt-1">{data?.recentAnnouncements?.length || 0}</p>
           <p className="text-xs text-gray-400 mt-2 group-hover:text-primary-600">Manage →</p>
         </Link>
-        <Link to="/admin/prayer-requests" className="card hover:shadow-md transition-shadow group">
-          <p className="text-sm text-gray-500">Prayer Requests</p>
-          <p className="text-3xl font-bold text-primary-600 mt-1">{data?.recentPrayerRequests?.length || 0}</p>
+        <Link to="/admin/worship" className="card hover:shadow-md transition-shadow group">
+          <p className="text-sm text-gray-500">Programme Leaders</p>
+          <p className="text-3xl font-bold text-primary-600 mt-1">{data?.activeWorshipLeaders?.length || 0}</p>
           <p className="text-xs text-gray-400 mt-2 group-hover:text-primary-600">Manage →</p>
         </Link>
       </div>
@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
 
         <div className="card">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Active Worship Leaders</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Active Programme Leaders</h2>
             <Link to="/admin/worship" className="text-sm text-primary-600 hover:text-primary-700">Manage</Link>
           </div>
           {data?.activeWorshipLeaders?.length ? (
@@ -103,35 +103,7 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 text-center py-4">No active worship leaders</p>
-          )}
-        </div>
-
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Prayer Requests</h2>
-            <Link to="/admin/prayer-requests" className="text-sm text-primary-600 hover:text-primary-700">View all</Link>
-          </div>
-          {data?.recentPrayerRequests?.length ? (
-            <div className="space-y-2">
-              {data.recentPrayerRequests.slice(0, 4).map((pr) => (
-                <div key={pr.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{pr.title}</p>
-                    <p className="text-xs text-gray-500">{pr.category}</p>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    pr.status === 'resolved' ? 'bg-green-100 text-green-800' :
-                    pr.status === 'addressed' ? 'bg-blue-100 text-blue-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {pr.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-4">No prayer requests</p>
+            <p className="text-sm text-gray-500 text-center py-4">No active programme leaders</p>
           )}
         </div>
 

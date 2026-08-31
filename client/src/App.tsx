@@ -10,7 +10,6 @@ import DashboardPage from './pages/DashboardPage';
 import FamiliesPage from './pages/FamiliesPage';
 import FamilyDetailPage from './pages/FamilyDetailPage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
-import PrayerRequestsPage from './pages/PrayerRequestsPage';
 import WorshipPage from './pages/WorshipPage';
 import AttendancePage from './pages/AttendancePage';
 import GalleryPage from './pages/GalleryPage';
@@ -53,7 +52,6 @@ function App() {
         <Route path="/families" element={<Layout><FamiliesPage /></Layout>} />
         <Route path="/families/:id" element={<Layout><FamilyDetailPage /></Layout>} />
         <Route path="/announcements" element={<Layout><AnnouncementsPage /></Layout>} />
-        <Route path="/prayer-requests" element={<Layout><PrayerRequestsPage /></Layout>} />
         <Route path="/worship" element={<Layout><WorshipPage /></Layout>} />
         <Route path="/attendance" element={<Layout><AttendancePage /></Layout>} />
         <Route path="/gallery" element={<Layout><GalleryPage /></Layout>} />

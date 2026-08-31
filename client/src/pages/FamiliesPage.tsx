@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { familyService } from '../services/api';
 import { Family } from '../types';
+import PrayerRequestsPage from './PrayerRequestsPage';
 
 export default function FamiliesPage() {
   const [families, setFamilies] = useState<Family[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<'families' | 'prayer'>('families');
 
   useEffect(() => {
     loadFamilies();
@@ -34,10 +36,27 @@ export default function FamiliesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Families</h1>
-        <p className="text-gray-500 mt-1">Browse all families in our community</p>
+        <p className="text-gray-500 mt-1">Browse families and share within your community</p>
       </div>
 
-      {families.length === 0 ? (
+      <div className="flex gap-1 p-1 rounded-xl bg-gray-100 w-fit">
+        <button
+          onClick={() => setTab('families')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'families' ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+        >
+          Families
+        </button>
+        <button
+          onClick={() => setTab('prayer')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === 'prayer' ? 'bg-white text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+        >
+          Prayer Requests
+        </button>
+      </div>
+
+      {tab === 'prayer' ? (
+        <PrayerRequestsPage />
+      ) : families.length === 0 ? (
         <div className="card text-center py-12">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />

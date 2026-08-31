@@ -8,7 +8,7 @@ export default function AdminWorshipPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: '', role: 'Worship Leader', is_active: true });
+  const [form, setForm] = useState({ name: '', role: 'Programme Leader', is_active: true });
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   useEffect(() => { loadLeaders(); }, []);
@@ -18,7 +18,7 @@ export default function AdminWorshipPage() {
       const res = await worshipLeaderService.getAll();
       setLeaders(res.data);
     } catch (error) {
-      toast.error('Failed to load worship leaders');
+      toast.error('Failed to load programme leaders');
     } finally {
       setLoading(false);
     }
@@ -30,10 +30,10 @@ export default function AdminWorshipPage() {
     try {
       if (editingId) {
         await worshipLeaderService.update(editingId, form);
-        toast.success('Worship leader updated');
+        toast.success('Programme leader updated');
       } else {
         await worshipLeaderService.create(form);
-        toast.success('Worship leader added');
+        toast.success('Programme leader added');
       }
       resetForm();
       loadLeaders();
@@ -51,7 +51,7 @@ export default function AdminWorshipPage() {
   const handleDelete = async (id: number) => {
     try {
       await worshipLeaderService.delete(id);
-      toast.success('Worship leader removed');
+      toast.success('Programme leader removed');
       setDeleteConfirm(null);
       loadLeaders();
     } catch (err: any) {
@@ -70,7 +70,7 @@ export default function AdminWorshipPage() {
   };
 
   const resetForm = () => {
-    setForm({ name: '', role: 'Worship Leader', is_active: true });
+    setForm({ name: '', role: 'Programme Leader', is_active: true });
     setEditingId(null);
     setShowForm(false);
   };
@@ -83,7 +83,7 @@ export default function AdminWorshipPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manage Worship Leaders</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Manage Programme Leaders</h1>
           <p className="text-gray-500 mt-1">{leaders.length} leaders total</p>
         </div>
         <button onClick={() => { resetForm(); setShowForm(!showForm); }} className="btn-primary">

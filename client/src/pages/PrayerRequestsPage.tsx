@@ -61,11 +61,7 @@ export default function PrayerRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Prayer Requests</h1>
-          <p className="text-gray-500 mt-1">Share and support one another in prayer</p>
-        </div>
+      <div className="flex items-center justify-end">
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
           {showForm ? 'Cancel' : 'New Request'}
         </button>
