@@ -139,10 +139,57 @@ export async function updateFamily(req: AuthRequest, res: Response) {
       return res.status(404).json({ error: 'Family not found' });
     }
 
+    if (hasMale && leader_male_id) {
+      await query(`UPDATE users SET role = 'family_leader', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [leader_male_id]);
+    }
+    if (hasFemale && leader_female_id) {
+      await query(`UPDATE users SET role = 'family_leader', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [leader_female_id]);
+    }
+
     res.json(result.rows[0]);
   } catch (error: any) {
     console.error('Update family error:', error);
     res.status(500).json({ error: 'Failed to update family' });
+  }
+}
+
+export async function assignFamilyLeader(req: AuthRequest, res: Response) {
+  try {
+    const { id } = req.params;
+    const { member_id, gender } = req.body;
+
+    if (!member_id || !['male', 'female'].includes(gender)) {
+      return res.status(400).json({ error: 'A member and a valid gender (male/female) are required' });
+    }
+
+    const memberResult = await query(
+      'SELECT id, user_id, full_name, gender, family_id FROM members WHERE id = $1',
+      [member_id]
+    );
+    if (memberResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Member not found' });
+    }
+    const member = memberResult.rows[0];
+
+    if (member.gender && member.gender !== gender) {
+      return res.status(400).json({ error: `Member is ${member.gender}, cannot be assigned as the ${gender === 'male' ? 'Paapa' : 'Maama'} leader` });
+    }
+    if (!member.user_id) {
+      return res.status(400).json({ error: 'This member has no login account yet, so they cannot be assigned as a leader' });
+    }
+
+    const column = gender === 'male' ? 'leader_male_id' : 'leader_female_id';
+    const result = await query(`UPDATE families SET ${column} = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`, [member.user_id, id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Family not found' });
+    }
+
+    await query(`UPDATE users SET role = 'family_leader', updated_at = CURRENT_TIMESTAMP WHERE id = $1`, [member.user_id]);
+
+    res.json({ ...result.rows[0], member_name: member.full_name, gender });
+  } catch (error: any) {
+    console.error('Assign family leader error:', error);
+    res.status(500).json({ error: 'Failed to assign family leader' });
   }
 }
 

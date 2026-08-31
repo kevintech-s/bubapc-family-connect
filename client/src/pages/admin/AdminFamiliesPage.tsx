@@ -1,19 +1,11 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { familyService, authService, resolveUploadUrl } from '../../services/api';
-import { Family } from '../../types';
+import { familyService, memberService, resolveUploadUrl } from '../../services/api';
+import { Family, Member } from '../../types';
 import toast from 'react-hot-toast';
-
-interface AdminUser {
-  id: number;
-  email: string;
-  name: string;
-  role: string;
-  is_active: boolean;
-}
 
 export default function AdminFamiliesPage() {
   const [families, setFamilies] = useState<Family[]>([]);
-  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -24,9 +16,9 @@ export default function AdminFamiliesPage() {
 
   const loadData = async () => {
     try {
-      const [famRes, userRes] = await Promise.all([familyService.getAll(), authService.getUsers()]);
+      const [famRes, memberRes] = await Promise.all([familyService.getAll(), memberService.getAll()]);
       setFamilies(famRes.data);
-      setUsers(userRes.data ?? []);
+      setMembers(memberRes.data);
     } catch (error) {
       toast.error('Failed to load families');
     } finally {
@@ -48,14 +40,16 @@ export default function AdminFamiliesPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.name) { toast.error('Family name is required'); return; }
+    const male = members.find((m) => m.id === Number(form.leader_male_id));
+    const female = members.find((m) => m.id === Number(form.leader_female_id));
     const payload = {
       name: form.name,
       description: form.description,
       contact_email: form.contact_email,
       contact_phone: form.contact_phone,
       address: form.address,
-      leader_male_id: form.leader_male_id ? Number(form.leader_male_id) : null,
-      leader_female_id: form.leader_female_id ? Number(form.leader_female_id) : null,
+      leader_male_id: male?.user_id ?? null,
+      leader_female_id: female?.user_id ?? null,
     };
     try {
       if (editingId) {
@@ -80,8 +74,8 @@ export default function AdminFamiliesPage() {
       contact_email: family.contact_email || '',
       contact_phone: family.contact_phone || '',
       address: family.address || '',
-      leader_male_id: family.leader_male_id ? String(family.leader_male_id) : '',
-      leader_female_id: family.leader_female_id ? String(family.leader_female_id) : '',
+      leader_male_id: family.leader_male_id ? String(members.find((m) => m.user_id === family.leader_male_id)?.id ?? '') : '',
+      leader_female_id: family.leader_female_id ? String(members.find((m) => m.user_id === family.leader_female_id)?.id ?? '') : '',
     });
     setShowForm(true);
   };
@@ -141,20 +135,20 @@ export default function AdminFamiliesPage() {
                 <input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Male Family Leader</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Male Family Leader (Paapa)</label>
                 <select value={form.leader_male_id} onChange={(e) => setForm({ ...form, leader_male_id: e.target.value })} className="input-field">
-                  <option value="">-- No leader --</option>
-                  {users.filter((u) => u.is_active && u.role === 'family_leader').map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}{u.name !== u.email ? ` (${u.email})` : ''}</option>
+                  <option value="">-- No Paapa --</option>
+                  {members.filter((m) => m.user_id != null && m.gender !== 'female').map((m) => (
+                    <option key={m.id} value={m.id}>{m.full_name}{m.gender === 'male' ? '' : ' (no gender set)'}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Female Family Leader</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Female Family Leader (Maama)</label>
                 <select value={form.leader_female_id} onChange={(e) => setForm({ ...form, leader_female_id: e.target.value })} className="input-field">
-                  <option value="">-- No leader --</option>
-                  {users.filter((u) => u.is_active && u.role === 'family_leader').map((u) => (
-                    <option key={u.id} value={u.id}>{u.name}{u.name !== u.email ? ` (${u.email})` : ''}</option>
+                  <option value="">-- No Maama --</option>
+                  {members.filter((m) => m.user_id != null && m.gender !== 'male').map((m) => (
+                    <option key={m.id} value={m.id}>{m.full_name}{m.gender === 'female' ? '' : ' (no gender set)'}</option>
                   ))}
                 </select>
               </div>

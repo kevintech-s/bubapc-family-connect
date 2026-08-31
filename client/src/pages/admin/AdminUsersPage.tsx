@@ -27,7 +27,7 @@ const ROLE_COLORS: Record<string, string> = {
   member: 'bg-gray-100 text-gray-600',
 };
 
-const ROLE_OPTIONS = ['member', 'family_leader', 'family_coordinator', 'pastor'];
+const ROLE_OPTIONS = ['member', 'family_coordinator', 'pastor'];
 
 export default function AdminUsersPage() {
   const { user: currentUser } = useAuth();

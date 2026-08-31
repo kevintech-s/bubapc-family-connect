@@ -34,6 +34,14 @@ export async function register(req: Request, res: Response) {
     );
 
     const user = result.rows[0];
+
+    await query(
+      `INSERT INTO members (user_id, full_name, email)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (email) DO UPDATE SET user_id = EXCLUDED.user_id`,
+      [user.id, name, email]
+    );
+
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, jwtSecret(), { expiresIn: JWT_EXPIRES_IN as any });
 
     res.status(201).json({ user: { id: user.id, email: user.email, name: user.name, role: user.role, profile_photo: user.profile_photo || '' }, token });

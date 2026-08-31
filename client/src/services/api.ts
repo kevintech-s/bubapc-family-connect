@@ -250,7 +250,16 @@ function makeService<T extends { id: number }>(collection: Collection) {
   };
 }
 
-export const familyService = makeService<any>('families');
+export const familyService = {
+  ...makeService<any>('families'),
+  assignLeader: async (familyId: number, memberId: number, gender: 'male' | 'female'): Promise<{ data: any }> => {
+    if (await serverAvailable()) {
+      const res = await api.post(`/families/${familyId}/leader`, { member_id: memberId, gender });
+      return res;
+    }
+    throw new Error('Assigning a leader requires server connection');
+  },
+};
 export const memberService = makeService<any>('members');
 export const announcementService = makeService<any>('announcements');
 export const prayerRequestService = {
