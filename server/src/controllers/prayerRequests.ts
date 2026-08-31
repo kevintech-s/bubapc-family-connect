@@ -36,6 +36,9 @@ export async function getPrayerRequests(req: AuthRequest, res: Response) {
     if (conditions.length > 0) {
       sql += ' WHERE ' + conditions.join(' AND ');
     }
+    if (role === 'member') {
+      return res.json([]);
+    }
     sql += ' ORDER BY pr.created_at DESC';
 
     const result = await query(sql, params);

@@ -6,6 +6,9 @@ export async function getAttendanceByDate(req: AuthRequest, res: Response) {
   try {
     const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
     const role = req.user?.role;
+    if (role === 'member') {
+      return res.status(403).json({ error: 'Only leaders can view attendance' });
+    }
     let familyWhere = '';
     const params: any[] = [date];
 
@@ -38,6 +41,9 @@ export async function getMembersByDate(req: AuthRequest, res: Response) {
   try {
     const date = (req.query.date as string) || new Date().toISOString().split('T')[0];
     const role = req.user?.role;
+    if (role === 'member') {
+      return res.status(403).json({ error: 'Only leaders can view attendance' });
+    }
     let where = 'WHERE m.is_active = true';
     const params: any[] = [];
 
@@ -100,6 +106,34 @@ export async function checkIn(req: AuthRequest, res: Response) {
   }
 }
 
+export async function selfCheckIn(req: AuthRequest, res: Response) {
+  try {
+    const userId = req.user?.id;
+    const service_date = (req.body.service_date as string) || new Date().toISOString().split('T')[0];
+
+    const member = await query('SELECT id, family_id FROM members WHERE user_id = $1', [userId]);
+    if (member.rows.length === 0) {
+      return res.status(403).json({ error: 'No member profile linked to this account' });
+    }
+    const memberId = member.rows[0].id;
+    const familyId = member.rows[0].family_id;
+
+    const result = await query(
+      `INSERT INTO attendance (service_date, member_id, family_id, checked_in_by, status)
+       VALUES ($1, $2, $3, $4, 'present')
+       ON CONFLICT (service_date, member_id)
+       DO UPDATE SET status = EXCLUDED.status, checked_in_by = EXCLUDED.checked_in_by
+       RETURNING *`,
+      [service_date, memberId, familyId, userId]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Self check in error:', error);
+    res.status(500).json({ error: 'Failed to check in' });
+  }
+}
+
 export async function undoCheckIn(req: AuthRequest, res: Response) {
   try {
     const { service_date, member_id } = req.body;
@@ -117,6 +151,9 @@ export async function undoCheckIn(req: AuthRequest, res: Response) {
 export async function getAttendanceStats(req: AuthRequest, res: Response) {
   try {
     const role = req.user?.role;
+    if (role === 'member') {
+      return res.status(403).json({ error: 'Only leaders can view attendance' });
+    }
     let familyWhere = '';
     const params: any[] = [];
     let familyIds: number[] = [];

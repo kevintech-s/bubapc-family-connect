@@ -166,7 +166,9 @@ function makeService<T extends { id: number }>(collection: Collection) {
           items = res.data;
           const { putAll } = await import('../utils/localDB');
           await putAll(collection, items);
-        } catch { /* use local */ }
+        } catch (e: any) {
+          if (e?.response?.status) throw e;
+        }
       }
       if (params) {
         for (const [key, val] of Object.entries(params)) {
@@ -187,7 +189,9 @@ function makeService<T extends { id: number }>(collection: Collection) {
           });
           await createItem(collection, res.data);
           return res;
-        } catch { /* fall through */ }
+        } catch (e: any) {
+          if (e?.response?.status) throw e;
+        }
       }
       const item = await getById<T>(collection, id);
       if (item) return { data: item };
@@ -258,6 +262,13 @@ export const familyService = {
       return res;
     }
     throw new Error('Assigning a leader requires server connection');
+  },
+  updateFields: async (familyId: number, data: any): Promise<{ data: any }> => {
+    if (await serverAvailable()) {
+      const res = await api.put(`/families/${familyId}`, data);
+      return res;
+    }
+    throw new Error('Updating requires server connection');
   },
 };
 export const memberService = makeService<any>('members');
@@ -454,12 +465,87 @@ export const attendanceService = {
     }
     throw new Error('Check-in requires server connection');
   },
+
+  selfCheckIn: async (service_date: string): Promise<{ data: any }> => {
+    if (await serverAvailable()) {
+      const serverUrl = effectiveServerUrl();
+      const res = await axios.post(`${serverUrl}/api/attendance/self-check-in`, { service_date }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      });
+      return res;
+    }
+    throw new Error('Check-in requires server connection');
+  },
+};
+
+async function apiGet(path: string, params?: Record<string, any>): Promise<{ data: any }> {
+  if (await serverAvailable()) {
+    const serverUrl = effectiveServerUrl();
+    const res = await axios.get(`${serverUrl}/api${path}`, {
+      params,
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    });
+    return res;
+  }
+  return { data: null };
+}
+
+async function apiPost(path: string, body: any): Promise<{ data: any }> {
+  if (await serverAvailable()) {
+    const serverUrl = effectiveServerUrl();
+    return axios.post(`${serverUrl}/api${path}`, body, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    });
+  }
+  throw new Error('Requires server connection');
+}
+
+async function apiPut(path: string, body: any): Promise<{ data: any }> {
+  if (await serverAvailable()) {
+    const serverUrl = effectiveServerUrl();
+    return axios.put(`${serverUrl}/api${path}`, body, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    });
+  }
+  throw new Error('Requires server connection');
+}
+
+async function apiDelete(path: string): Promise<void> {
+  if (await serverAvailable()) {
+    const serverUrl = effectiveServerUrl();
+    await axios.delete(`${serverUrl}/api${path}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    });
+  }
+}
+
+export const devotionService = {
+  getAll: (familyId?: number) => apiGet('/devotions', familyId ? { family_id: familyId } : undefined),
+  create: (data: any) => apiPost('/devotions', data),
+  update: (id: number, data: any) => apiPut(`/devotions/${id}`, data),
+  remove: (id: number) => apiDelete(`/devotions/${id}`),
+};
+
+export const scriptureService = {
+  getToday: () => apiGet('/scriptures'),
+  set: (data: any) => apiPost('/scriptures', data),
+};
+
+export const fridayService = {
+  getQuestion: (familyId: number) => apiGet('/fridays/question', { family_id: familyId }),
+  createQuestion: (data: any) => apiPost('/fridays/question', data),
+  answerQuestion: (questionId: number, answer: string) => apiPost(`/fridays/question/${questionId}/answer`, { answer }),
+};
+
+export const cancellationService = {
+  getUpcoming: () => apiGet('/friday-cancellations/upcoming'),
+  create: (data: any) => apiPost('/friday-cancellations', data),
+  remove: (id: number) => apiDelete(`/friday-cancellations/${id}`),
 };
 
 export const isServerConfigured = (): boolean => {
   return !!effectiveServerUrl() && effectiveServerUrl() !== '/api';
-};
-export const getServerUrl = _getServerUrl;
+};export const getServerUrl = _getServerUrl;
 export const setServerUrl = _setServerUrl;
 
 export async function syncPendingChanges(): Promise<void> {

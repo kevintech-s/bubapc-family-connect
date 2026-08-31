@@ -17,11 +17,14 @@ export default function AttendancePage() {
   const [serviceDate, setServiceDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<{ totalMembers: number; recentServices: any[] }>({ totalMembers: 0, recentServices: [] });
+  const [ownCheckedIn, setOwnCheckedIn] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
 
   const isLeader = user?.role === 'family_leader' || user?.role === 'family_coordinator' || user?.role === 'pastor';
 
   useEffect(() => {
-    loadData();
+    if (isLeader) loadData();
+    else setLoading(false);
   }, []);
 
   const loadData = async () => {
@@ -79,6 +82,48 @@ export default function AttendancePage() {
       toast.error(err.response?.data?.error || 'Failed to undo');
     }
   };
+
+  const handleSelfCheckIn = async () => {
+    setCheckingIn(true);
+    try {
+      await attendanceService.selfCheckIn(new Date().toISOString().split('T')[0]);
+      setOwnCheckedIn(true);
+      toast.success('Checked in for today');
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'Check-in failed');
+    } finally {
+      setCheckingIn(false);
+    }
+  };
+
+  if (!isLeader) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
+          <p className="text-gray-500 mt-1">Check in for today's service</p>
+        </div>
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Today's Service</p>
+              <p className="text-sm text-gray-500 mt-0.5">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+            </div>
+            <button
+              onClick={handleSelfCheckIn}
+              disabled={checkingIn || ownCheckedIn}
+              className={`btn-primary ${ownCheckedIn ? '!bg-green-100 !text-green-700 hover:!bg-green-100 cursor-default' : ''}`}
+            >
+              {ownCheckedIn ? 'Checked in' : checkingIn ? 'Checking in...' : 'Check in'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-4">
+            Thank you for letting your family know you're joining this Friday. Only leaders see the attendance roster.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -142,7 +187,7 @@ export default function AttendancePage() {
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 font-medium text-gray-500">Member</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-500">Family</th>
-                {isLeader && <th className="text-right py-3 px-4 font-medium text-gray-500">Status</th>}
+                <th className="text-right py-3 px-4 font-medium text-gray-500">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -160,18 +205,16 @@ export default function AttendancePage() {
                       </div>
                     </td>
                     <td className="py-3 px-4 text-gray-500">{m.family_name || '-'}</td>
-                    {isLeader && (
-                      <td className="py-3 px-4 text-right">
-                        {isPresent ? (
-                          <button onClick={() => handleUndo(m.id)} className="px-3 py-1 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50">Undo</button>
-                        ) : (
-                          <div className="inline-flex gap-1">
-                            <button onClick={() => handleCheckIn(m.id, 'present')} className="px-3 py-1 text-xs font-medium rounded-lg border border-green-200 text-green-600 hover:bg-green-50">Check in</button>
-                            <button onClick={() => handleCheckIn(m.id, 'late')} className="px-3 py-1 text-xs font-medium rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50">Late</button>
-                          </div>
-                        )}
-                      </td>
-                    )}
+                    <td className="py-3 px-4 text-right">
+                      {isPresent ? (
+                        <button onClick={() => handleUndo(m.id)} className="px-3 py-1 text-xs font-medium rounded-lg border border-red-200 text-red-600 hover:bg-red-50">Undo</button>
+                      ) : (
+                        <div className="inline-flex gap-1">
+                          <button onClick={() => handleCheckIn(m.id, 'present')} className="px-3 py-1 text-xs font-medium rounded-lg border border-green-200 text-green-600 hover:bg-green-50">Check in</button>
+                          <button onClick={() => handleCheckIn(m.id, 'late')} className="px-3 py-1 text-xs font-medium rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50">Late</button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

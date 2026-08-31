@@ -100,9 +100,14 @@ export async function updateFamily(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     const { name, description, contact_email, contact_phone, address, leader_male_id, leader_female_id } = req.body;
+    const themeScripture = req.body.theme_scripture;
+    const themeOfWeek = req.body.theme_of_week;
+    const logoUrl = req.body.logo_url;
     const role = req.user?.role;
     const userId = req.user?.id;
     const bodyHasLeader = (k: string) => Object.prototype.hasOwnProperty.call(req.body, k);
+    const hasMale = bodyHasLeader('leader_male_id');
+    const hasFemale = bodyHasLeader('leader_female_id');
 
     if (role === 'family_leader') {
       const leaderFamilies = await query(
@@ -115,8 +120,6 @@ export async function updateFamily(req: AuthRequest, res: Response) {
       }
     }
 
-    const hasMale = bodyHasLeader('leader_male_id');
-    const hasFemale = bodyHasLeader('leader_female_id');
     const setClause = [
       'name = COALESCE($1, name)',
       'description = COALESCE($2, description)',
@@ -125,6 +128,9 @@ export async function updateFamily(req: AuthRequest, res: Response) {
       'address = COALESCE($5, address)',
     ];
     const params: any[] = [name, description, contact_email, contact_phone, address];
+    if (themeScripture !== undefined) { params.push(themeScripture); setClause.push(`theme_scripture = $${params.length}`); }
+    if (themeOfWeek !== undefined) { params.push(themeOfWeek); setClause.push(`theme_of_week = $${params.length}`); }
+    if (logoUrl !== undefined) { params.push(logoUrl); setClause.push(`logo_url = $${params.length}`); }
     if (hasMale) { params.push(leader_male_id); setClause.push(`leader_male_id = $${params.length}`); }
     if (hasFemale) { params.push(leader_female_id); setClause.push(`leader_female_id = $${params.length}`); }
     params.push(id);

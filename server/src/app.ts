@@ -15,6 +15,9 @@ import dashboardRoutes from './routes/dashboard';
 import fridayCancellationRoutes from './routes/fridayCancellations';
 import attendanceRoutes from './routes/attendance';
 import reportRoutes from './routes/reports';
+import devotionRoutes from './routes/devotions';
+import scriptureRoutes from './routes/scriptures';
+import fridayRoute from './routes/fridays';
 import { errorHandler } from './middleware/errorHandler';
 import fs from 'fs';
 
@@ -55,6 +58,9 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/friday-cancellations', fridayCancellationRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/devotions', devotionRoutes);
+app.use('/api/scriptures', scriptureRoutes);
+app.use('/api/fridays', fridayRoute);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -169,6 +169,52 @@ const migrations = [
   `CREATE INDEX IF NOT EXISTS idx_reports_author ON reports(author_id)`,
 
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_members_email_unique ON members(email)`,
+
+  `ALTER TABLE families ADD COLUMN IF NOT EXISTS theme_scripture TEXT DEFAULT ''`,
+  `ALTER TABLE families ADD COLUMN IF NOT EXISTS theme_of_week TEXT DEFAULT ''`,
+  `ALTER TABLE families ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500) DEFAULT ''`,
+
+  `CREATE TABLE IF NOT EXISTS devotions (
+    id SERIAL PRIMARY KEY,
+    family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    content TEXT NOT NULL,
+    scripture TEXT DEFAULT '',
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_devotions_family ON devotions(family_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_devotions_author ON devotions(author_id)`,
+
+  `CREATE TABLE IF NOT EXISTS daily_scriptures (
+    id SERIAL PRIMARY KEY,
+    scripture_date DATE NOT NULL,
+    content TEXT NOT NULL,
+    reference VARCHAR(255) DEFAULT ''
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_scriptures_date ON daily_scriptures(scripture_date)`,
+
+  `CREATE TABLE IF NOT EXISTS friday_questions (
+    id SERIAL PRIMARY KEY,
+    family_id INTEGER REFERENCES families(id) ON DELETE CASCADE,
+    service_date DATE,
+    question TEXT NOT NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_friday_questions_family ON friday_questions(family_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_friday_questions_date ON friday_questions(service_date)`,
+
+  `CREATE TABLE IF NOT EXISTS friday_answers (
+    id SERIAL PRIMARY KEY,
+    question_id INTEGER REFERENCES friday_questions(id) ON DELETE CASCADE,
+    member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
+    answer TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(question_id, member_id)
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_friday_answers_question ON friday_answers(question_id)`,
 ];
 
 export async function runMigrations() {
