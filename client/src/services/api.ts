@@ -102,9 +102,9 @@ export const authService = {
     throw new Error('No server connected. Use offline mode or connect to a server.');
   },
 
-  register: async (email: string, password: string, name: string) => {
+  register: async (email: string, password: string, name: string, familyId?: number | string) => {
     if (await serverAvailable()) {
-      const res = await api.post('/auth/register', { email, password, name });
+      const res = await api.post('/auth/register', { email, password, name, family_id: familyId });
       await saveAuthData(res.data.token, res.data.user);
       return res;
     }

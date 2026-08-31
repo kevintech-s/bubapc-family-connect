@@ -1,6 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { familyService } from '../../services/api';
 import toast from 'react-hot-toast';
 
 export default function RegisterPage() {
@@ -8,9 +9,24 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [families, setFamilies] = useState<any[]>([]);
+  const [familyId, setFamilyId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    loadFamilies();
+  }, []);
+
+  const loadFamilies = async () => {
+    try {
+      const res = await familyService.getAll();
+      setFamilies(res.data);
+    } catch {
+      setFamilies([]);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -27,7 +43,7 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register(email, password, name);
+      await register(email, password, name, familyId || undefined);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (err: any) {
@@ -96,6 +112,21 @@ export default function RegisterPage() {
                 minLength={6}
                 autoComplete="new-password"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Join a Family</label>
+              <select
+                value={familyId}
+                onChange={(e) => setFamilyId(e.target.value)}
+                className="input-field"
+              >
+                <option value="">Select your family (optional)</option>
+                {families.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-gray-400">Choose from the families available. New families added by your pastor will appear here.</p>
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full">

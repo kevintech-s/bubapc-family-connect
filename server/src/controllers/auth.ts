@@ -12,7 +12,7 @@ function jwtSecret() {
 
 export async function register(req: Request, res: Response) {
   try {
-    const { email, password, name } = req.body;
+    const { email, password, name, family_id } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
@@ -35,11 +35,18 @@ export async function register(req: Request, res: Response) {
 
     const user = result.rows[0];
 
+    if (family_id !== undefined && family_id !== null && family_id !== '') {
+      const fam = await query('SELECT id FROM families WHERE id = $1', [family_id]);
+      if (fam.rows.length === 0) {
+        return res.status(400).json({ error: 'Selected family does not exist' });
+      }
+    }
+
     await query(
-      `INSERT INTO members (user_id, full_name, email)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (email) DO UPDATE SET user_id = EXCLUDED.user_id`,
-      [user.id, name, email]
+      `INSERT INTO members (user_id, full_name, email, family_id)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO UPDATE SET user_id = EXCLUDED.user_id, family_id = CASE WHEN $4 IS NULL THEN members.family_id ELSE EXCLUDED.family_id END`,
+      [user.id, name, email, family_id || null]
     );
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role, name: user.name }, jwtSecret(), { expiresIn: JWT_EXPIRES_IN as any });

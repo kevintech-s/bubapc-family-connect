@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, familyId?: number | string) => Promise<void>;
   logout: () => void;
   updateUser: (user: User) => void;
   loading: boolean;
@@ -65,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.data.user);
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const res = await authService.register(email, password, name);
+  const register = async (email: string, password: string, name: string, familyId?: number | string) => {
+    const res = await authService.register(email, password, name, familyId);
     localStorage.setItem('token', res.data.token);
     localStorage.setItem('user', JSON.stringify(res.data.user));
     skipGetMe.current = true;
